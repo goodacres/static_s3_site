@@ -47,7 +47,7 @@ resource "aws_acm_certificate_validation" "wildcard_cert" {
   provider = aws
 
   certificate_arn         = aws_acm_certificate.wildcard_website.arn
-  validation_record_fqdns = [aws_route53_record.wildcard_validation.fqdn]
+  validation_record_fqdns = [for record in aws_route53_record.wildcard_validation: record.fqdn]
 }
 
 
