@@ -29,9 +29,9 @@ resource "aws_route53_record" "wildcard_validation" {
   for_each = {
     for dvo in aws_acm_certificate.wildcard_website.domain_validation_options: dvo.domain_name => {
       name    = dvo.resource_record_name
-      record  = dvo.resource_record_value
       type    = dvo.resource_record_type
       zone_id = data.aws_route53_zone.main.zone_id
+      record  = dvo.resource_record_value
     }
   }
   ttl     = "60"
