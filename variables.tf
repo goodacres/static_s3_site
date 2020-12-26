@@ -9,17 +9,17 @@ variable "route53_domain_redirect" {
   type        = string
 }
 
-variable "create_s3_log_bucket" {
-  type = string
-  default = "true"
-}
+#variable "create_s3_log_bucket" {
+#  type = string
+#  default = "true"
+#}
 
-variable "create_s3_redirect_bucket" {
-  type = string
-  default = "false"
-}
+#variable "create_s3_redirect_bucket" {
+#  type = string
+#  default = "false"
+#}
 
-variable "create_s3_root_bucket" {
-  type = string
-  default = "true"
-}
+#variable "create_s3_root_bucket" {
+#  type = string
+#  default = "true"
+#}

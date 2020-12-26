@@ -60,7 +60,6 @@ data "aws_acm_certificate" "wildcard_website" {
 ## S3
 # Creates bucket to store logs
 resource "aws_s3_bucket" "website_logs" {
-  count = var.create_s3_log_bucket ? 1 : 0
 
   bucket = "${var.route53_domain_name}-logs"
   acl    = "log-delivery-write"
@@ -80,7 +79,6 @@ resource "aws_s3_bucket" "website_logs" {
 
 # Creates bucket to store the static website
 resource "aws_s3_bucket" "website_root" {
-  count = var.create_s3_root_bucket ? 1 : 0
 
   bucket = "${var.route53_domain_name}-root"
   acl    = "public-read"
@@ -110,8 +108,6 @@ resource "aws_s3_bucket" "website_root" {
 
 # Creates bucket for the website handling the redirection (if required), e.g. from https://www.example.com to https://example.com
 resource "aws_s3_bucket" "website_redirect" {
-  count = var.create_s3_redirect_bucket ? 1 : 0
-
   bucket        = "${var.route53_domain_name}-redirect"
   acl           = "public-read"
   force_destroy = true
@@ -254,8 +250,6 @@ POLICY
 
 # Creates the CloudFront distribution to serve the redirection website (if redirection is required)
 resource "aws_cloudfront_distribution" "website_cdn_redirect" {
-  count = var.create_s3_redirect_bucket ? 1 : 0
-
   enabled     = true
   price_class = "PriceClass_All" # Select the correct PriceClass depending on who the CDN is supposed to serve (https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/PriceClass.html)
   aliases     = [var.route53_domain_redirect]
@@ -324,8 +318,6 @@ resource "aws_cloudfront_distribution" "website_cdn_redirect" {
 
 # Creates the DNS record to point on the CloudFront distribution ID that handles the redirection website
 resource "aws_route53_record" "website_cdn_redirect_record" {
-  count = var.create_s3_redirect_bucket ? 1 : 0
-
   zone_id = data.aws_route53_zone.main.zone_id
   name    = var.route53_domain_redirect
   type    = "A"
