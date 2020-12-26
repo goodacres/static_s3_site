@@ -1,6 +1,6 @@
 variable "route53_domain_name" {
+  description = "Domain that will be directed to the main site, e.g goodacremycology.co.uk"
   type = string
-  default = "goodacremycology.co.uk"
 }
 
 variable "route53_domain_redirect" {
@@ -16,7 +16,7 @@ variable "create_s3_log_bucket" {
 
 variable "create_s3_redirect_bucket" {
   type = string
-  default = "true"
+  default = "false"
 }
 
 variable "create_s3_root_bucket" {

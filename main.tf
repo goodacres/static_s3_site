@@ -1,7 +1,7 @@
 ## Route 53
 # Provides details about the zone
 data "aws_route53_zone" "main" {
-  name         = var.route53_domain_name
+  name         = var.website-domain-main
   private_zone = false
 }
 
@@ -10,8 +10,8 @@ data "aws_route53_zone" "main" {
 resource "aws_acm_certificate" "wildcard_website" {
   provider = aws.us-east-1 # Wilcard certificate used by CloudFront requires this specific region (https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cnames-and-https-requirements.html)
 
-  domain_name               = var.route53_domain_name
-  subject_alternative_names = ["*.${var.route53_domain_name}"]
+  domain_name               = var.website-domain-main
+  subject_alternative_names = ["*.${var.website-domain-main}"]
   validation_method         = "DNS"
 
   tags = {
@@ -44,7 +44,7 @@ resource "aws_acm_certificate_validation" "wildcard_cert" {
 
 # Get the ARN of the issued certificate
 data "aws_acm_certificate" "wildcard_website" {
-  provider = aws
+  provider = aws.us-east-1
 
   depends_on = [
     aws_acm_certificate.wildcard_website,
@@ -52,7 +52,7 @@ data "aws_acm_certificate" "wildcard_website" {
     aws_acm_certificate_validation.wildcard_cert,
   ]
 
-  domain      = var.route53_domain_name
+  domain      = var.website-domain-main
   statuses    = ["ISSUED"]
   most_recent = true
 }
@@ -139,12 +139,12 @@ resource "aws_s3_bucket" "website_redirect" {
 # Creates the CloudFront distribution to serve the static website
 resource "aws_cloudfront_distribution" "website_cdn_root" {
   enabled     = true
-  price_class = "PriceClass_100" # Select the correct PriceClass depending on who the CDN is supposed to serve (https://docs.aws.amazon.com/AmazonCloudFront/ladev/DeveloperGuide/PriceClass.html)
-  aliases     = [var.route53_domain_name]
+  price_class = "PriceClass_All" # Select the correct PriceClass depending on who the CDN is supposed to serve (https://docs.aws.amazon.com/AmazonCloudFront/ladev/DeveloperGuide/PriceClass.html)
+  aliases     = [var.website-domain-main]
 
   origin {
-    origin_id   = var.aws_s3_bucket_id
-    domain_name = var.aws_s3_bucket_domain
+    origin_id   = "origin-bucket-${aws_s3_bucket.website_root.id}"
+    domain_name = aws_s3_bucket.website_root.website_endpoint
 
     custom_origin_config {
       origin_protocol_policy = "http-only" # The protocol policy that you want CloudFront to use when fetching objects from the origin server (a.k.a S3 in our situation). HTTP Only is the default setting when the origin is an Amazon S3 static website hosting endpoint, because Amazon S3 doesn’t support HTTPS connections for static website hosting endpoints.
@@ -158,7 +158,7 @@ resource "aws_cloudfront_distribution" "website_cdn_root" {
 
   logging_config {
     bucket = aws_s3_bucket.website_logs.bucket_domain_name
-    prefix = "${var.route53_domain_name}/"
+    prefix = "${var.website-domain-main}/"
   }
 
   default_cache_behavior {
@@ -215,7 +215,7 @@ resource "aws_cloudfront_distribution" "website_cdn_root" {
 # Creates the DNS record to point on the main CloudFront distribution ID
 resource "aws_route53_record" "website_cdn_root_record" {
   zone_id = data.aws_route53_zone.main.zone_id
-  name    = var.route53_domain_name
+  name    = var.website-domain-main
   type    = "A"
 
   alias {
@@ -254,9 +254,11 @@ POLICY
 
 # Creates the CloudFront distribution to serve the redirection website (if redirection is required)
 resource "aws_cloudfront_distribution" "website_cdn_redirect" {
+  count = var.create_s3_redirect_bucket ? 1 : 0
+
   enabled     = true
   price_class = "PriceClass_All" # Select the correct PriceClass depending on who the CDN is supposed to serve (https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/PriceClass.html)
-  aliases     = [var.route53_domain_redirect]
+  aliases     = [var.website-domain-redirect]
 
   origin {
     origin_id   = "origin-bucket-${aws_s3_bucket.website_redirect.id}"
@@ -274,7 +276,7 @@ resource "aws_cloudfront_distribution" "website_cdn_redirect" {
 
   logging_config {
     bucket = aws_s3_bucket.website_logs.bucket_domain_name
-    prefix = "${var.route53_domain_redirect}/"
+    prefix = "${var.website-domain-redirect}/"
   }
 
   default_cache_behavior {
@@ -322,8 +324,10 @@ resource "aws_cloudfront_distribution" "website_cdn_redirect" {
 
 # Creates the DNS record to point on the CloudFront distribution ID that handles the redirection website
 resource "aws_route53_record" "website_cdn_redirect_record" {
+  count = var.create_s3_redirect_bucket ? 1 : 0
+
   zone_id = data.aws_route53_zone.main.zone_id
-  name    = var.route53_domain_redirect
+  name    = var.website-domain-redirect
   type    = "A"
 
   alias {

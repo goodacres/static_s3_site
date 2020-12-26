@@ -4,6 +4,6 @@ output "website_cdn_root_id" {
 }
 
 output "root_s3_site_bucket" {
-  description = "Main CloudFront Distribution ID"
+  description = "root_s3_bucket_name"
   value       = aws_s3_bucket.website_root.id
 }
