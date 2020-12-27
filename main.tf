@@ -106,8 +106,8 @@ resource "aws_s3_bucket" "website_root" {
   }
 
   website {
-    index_document = "index.html"
-    error_document = "404.html"
+    index_document = var.index_document
+    error_document = var.error_document
   }
 
   tags = {
@@ -164,7 +164,7 @@ resource "aws_cloudfront_distribution" "website_cdn_root" {
     }
   }
 
-  default_root_object = "index.html"
+  default_root_object = var.index_document
 
   logging_config {
     bucket = aws_s3_bucket.website_logs.bucket_domain_name
@@ -280,7 +280,7 @@ resource "aws_cloudfront_distribution" "website_cdn_redirect" {
     }
   }
 
-  default_root_object = "index.html"
+  default_root_object = var.index_document
 
   logging_config {
     bucket = aws_s3_bucket.website_logs.bucket_domain_name
